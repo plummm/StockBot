@@ -50,6 +50,7 @@ class Stock_bot:
         price = self.__getPrice(sym)
         if price != -1:
             teleg_cmd.sendMessages(update.effective_chat.id, "Current price of " + sym + " is $" + str(price))
+            teleg_cmd.gSym[update.effective_chat.id][sym]["currentPrice"] = price
 
     def Add2WatchList(self, chat_id, sym):
         print(teleg_cmd.gSym)

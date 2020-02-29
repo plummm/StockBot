@@ -52,10 +52,14 @@ def getPrice(symbol):
             res_json = json.loads(response.text)
             break
 
-    if "financialData" in res_json:
-        price = res_json["financialData"]["currentPrice"]["raw"]
+    if "summaryDetail" in res_json:
+        price = res_json["summaryDetail"]["ask"]["raw"]
     else:
         price = -1
+    #if "financialData" in res_json:
+    #    price = res_json["financialData"]["currentPrice"]["raw"]
+    #else:
+    #    price = -1
     return price
 
 def getValidation(detail):
