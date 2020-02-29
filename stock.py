@@ -52,6 +52,7 @@ class Stock_bot:
             teleg_cmd.sendMessages(update.effective_chat.id, "Current price of " + sym + " is $" + str(price))
 
     def Add2WatchList(self, chat_id, sym):
+        print(teleg_cmd.gSym)
         if sym not in teleg_cmd.gSym[chat_id]:
             detail = req_cmd.getDetail(sym)
             if self.__validSym(detail):
@@ -126,7 +127,10 @@ class Stock_bot:
 
     def __getLocalSym(self, chat_id):
         sym = local_cache.readFromSymsCache(self.symCachePath[chat_id])
-        teleg_cmd.gSym[chat_id] = sym[str(chat_id)]
+        if str(chat_id) in sym:
+            teleg_cmd.gSym[chat_id] = sym[str(chat_id)]
+        else:
+            teleg_cmd.gSym[chat_id] = {}
 
     def __getLocalChatId(self):
         ids = local_cache.readFromChatIdCache(self.chatIdCachePath)
