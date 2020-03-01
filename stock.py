@@ -82,6 +82,8 @@ class Stock_bot:
 
     def MessageUnknowText(self, update, context):
         chat_id = update.effective_chat.id
+        if not self.__isChatRegistered(chat_id):
+            return
         if teleg_cmd.userStatus[update.effective_user.id] == teleg_cmd.StatusAddToWatchList:
             if self.Add2WatchList(chat_id, update.message.text):
                 teleg_cmd.sendMessages(chat_id, update.message.text + " has been added to the watchlist.\n"
@@ -139,3 +141,9 @@ class Stock_bot:
 
     def __write2LocalSym(self, chat_id, syms):
         local_cache.writeToSymsCache(self.symCachePath[chat_id], syms)
+
+    def __isChatRegistered(self, chat_id):
+        if chat_id not in teleg_cmd.gChatId:
+            teleg_cmd.sendMessages(chat_id, "/start first.")
+            return False
+        return True
