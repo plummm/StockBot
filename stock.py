@@ -19,7 +19,7 @@ class Stock_bot:
         self.initTelegram(token)
         self.initLogging()
         self.initCache()
-        self.initTime()
+        #self.initTime()
 
     def initTelegram(self, token):
         teleg_cmd.updater = Updater(token=token, use_context=True)
