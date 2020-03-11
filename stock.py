@@ -100,6 +100,7 @@ class Stock_bot:
 
     def CommandStart(self, update, context):
         chat_id = update.effective_chat.id
+        print(chat_id)
         self.symCachePath[chat_id] = "./sym-"+str(chat_id)
         self.__getLocalSym(chat_id)
         if chat_id not in teleg_cmd.gChatId:
@@ -109,23 +110,26 @@ class Stock_bot:
 
     def MessageUnknowText(self, update, context):
         chat_id = update.effective_chat.id
+        if update.effective_user == None:
+            return
+        user_id = update.effective_user.id
         if not self.__isChatRegistered(chat_id):
             return
-        if teleg_cmd.userStatus[chat_id] == teleg_cmd.StatusAddToWatchList:
+        if teleg_cmd.userStatus[user_id] == teleg_cmd.StatusAddToWatchList:
             if self.Add2WatchList(chat_id, update.message.text):
                 teleg_cmd.sendMessages(chat_id, update.message.text + " has been added to the watchlist.\n"
                                        + "The current price is $" + str(teleg_cmd.gSym[chat_id][update.message.text]["currentPrice"]))
             else:
                 teleg_cmd.sendMessages(chat_id, update.message.text + " is not a valid stock symbol.")
-        elif teleg_cmd.userStatus[chat_id] == teleg_cmd.StatusRemoveFromWatchList:
+        elif teleg_cmd.userStatus[user_id] == teleg_cmd.StatusRemoveFromWatchList:
             if self.RemoveFromWatchList(chat_id, update.message.text):
                 teleg_cmd.sendMessages(chat_id, update.message.text + " has been removed from the watchlist.")
             else:
                 teleg_cmd.sendMessages(chat_id, "There is no " + update.message.text + " in the watchlist.")
-        elif teleg_cmd.userStatus[chat_id] == teleg_cmd.StatusGetPrice:
+        elif teleg_cmd.userStatus[user_id] == teleg_cmd.StatusGetPrice:
             self.showThePrice(update, update.message.text)
 
-        teleg_cmd.userStatus[chat_id] = teleg_cmd.StatusNone
+        teleg_cmd.userStatus[user_id] = teleg_cmd.StatusNone
 
     def CallbackStockPick(self, update, context):
         query = update.callback_query
