@@ -150,7 +150,7 @@ class Stock_bot:
 
         print("Market Closed")
         since_market_close = current_dt - market_close
-        if since_market_close.seconds // 60 <= 7*60:
+        if since_market_close.seconds // 60 <= 7:
             for sym in sym2ChatId:
                 [change, price] = alpaca.getDailyChange(sym)
                 for chat_id in sym2ChatId[sym]:
