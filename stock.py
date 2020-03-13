@@ -1,6 +1,7 @@
 import req_cmd
 import local_cache
 import teleg_cmd
+import alpaca
 
 from telegram import Bot
 from telegram.ext import Updater
@@ -15,11 +16,13 @@ import threading
 class Stock_bot:
     def __init__(self, token):
         self.symCachePath = {}
+        self.dailyReport = {}
+        self.today = datetime.today()
         self.chatIdCachePath = "./chat_id"
         self.initTelegram(token)
         self.initLogging()
         self.initCache()
-        #self.initTime()
+        self.initTime()
 
     def initTelegram(self, token):
         teleg_cmd.updater = Updater(token=token, use_context=True)
@@ -42,8 +45,14 @@ class Stock_bot:
     def initCache(self):
         ids = self.__getLocalChatId()
         for id in ids:
+            if id not in teleg_cmd.gChatId:
+                teleg_cmd.gChatId.append(id)
             self.symCachePath[id] = "./sym-"+str(id)
             self.__getLocalSym(id)
+            for sym in teleg_cmd.gSym[id]:
+                if id not in self.dailyReport:
+                    self.dailyReport[id] = {}
+                self.dailyReport[id][sym] = False
 
     def initLogging(self):
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -51,37 +60,73 @@ class Stock_bot:
 
     def initTime(self):
         nyc = timezone('America/New_York')
-        today = datetime.today().astimezone(nyc)
-        today_str = datetime.today().astimezone(nyc).strftime('%Y-%m-%d')
-        calendar = req_cmd.getMarketCalendar(today_str)
-        market_open = today.replace(
-            hour=calendar.open.hour,
-            minute=calendar.open.minute,
+        self.today = datetime.today().astimezone(nyc)
+        self.today -= timedelta(days=1)
+        self.today = self.today.replace(
+            hour=0,
+            minute=0,
             second=0
         )
-        market_open = market_open.astimezone(nyc)
-        market_close = today.replace(
-            hour=calendar.close.hour,
-            minute=calendar.close.minute,
-            second=0
-        )
-        market_close = market_close.astimezone(nyc)
+        th = threading.Thread(target=self.__dailyTimer)
+        th.start()
 
-        current_dt = datetime.today().astimezone(nyc)
-        self.__prepareWatcher(market_open, market_close)
+    def watchPriceTrend(self, current_dt, market_open, market_close, sym2ChatId):
+        before_market_open = market_open - current_dt
+        since_market_open = current_dt - market_open
+        print("Serval hours before market open.")
+        while before_market_open.days >= 0 and before_market_open.seconds // 60 >= 60:
+            time.sleep(60*60)
+            before_market_open = market_open - current_dt
+        print("Serval minutes before market open.")
+        while before_market_open.days >= 0 and before_market_open.seconds // 60 <= 60:
+            time.sleep(1)
+            before_market_open = market_open - current_dt
+        print("Market Opened")
+        if since_market_open.seconds // 60 <= 7:
+            for sym in sym2ChatId:
+                price = alpaca.getMarketOpenPrice(sym)
+                for chat_id in sym2ChatId[sym]:
+                    self.__updatePrice(chat_id, sym, price)
+            for chat_id in teleg_cmd.gChatId:
+                teleg_cmd.sendMessages(chat_id, "Market Opened!")
+                teleg_cmd.mergeStocksPrint(chat_id, "Market Opened Price:\n")
 
-    #def watchPriceTrend(self, market_open, market_close, sym2ChatId):
+        before_market_close = market_close - current_dt
+        while before_market_close.days >=0:
+            time.sleep(300)
+            for sym in sym2ChatId:
+                [change, price] = alpaca.getDailyChange(sym)
+                for chat_id in sym2ChatId[sym]:
+                    if abs(change) > 5 and not self.dailyReport[chat_id][sym]:
+                        message = 'Breaking: {} moved {}% over the last one day, current price is ${}'.format(sym, change, price)
+                        teleg_cmd.sendMessages(chat_id, message)
+                        self.dailyReport[chat_id][sym] = True
+            before_market_close = market_close - current_dt
+
+        print("Market Closed")
+        since_market_close = current_dt - market_close
+        if since_market_close.seconds // 60 <= 7:
+            for sym in sym2ChatId:
+                price = alpaca.getCurrentPrice(sym)
+                for chat_id in sym2ChatId[sym]:
+                    self.__updatePrice(chat_id, sym, price)
+            for chat_id in teleg_cmd.gChatId:
+                teleg_cmd.sendMessages(chat_id, "Market Closed!")
+                teleg_cmd.mergeStocksPrint(chat_id, "Market Closeed Price:\n")
+
+
 
     def showThePrice(self, update, sym):
         price = self.__getPrice(sym)
         if price != -1:
             teleg_cmd.sendMessages(update.effective_chat.id, "Current price of " + sym + " is $" + str(price))
-            if sym in teleg_cmd.gSym[update.effective_chat.id]:
-                teleg_cmd.gSym[update.effective_chat.id][sym]["currentPrice"] = price
+            self.__updatePrice(update.effective_chat.id, sym, price)
 
     def Add2WatchList(self, chat_id, sym):
         print(teleg_cmd.gSym)
         if sym not in teleg_cmd.gSym[chat_id]:
+            if sym not in self.dailyReport:
+                self.dailyReport[sym] = {}
             detail = req_cmd.getDetail(sym)
             if self.__validSym(detail):
                 teleg_cmd.gSym[chat_id][sym] = detail
@@ -113,6 +158,9 @@ class Stock_bot:
         if update.effective_user == None:
             return
         user_id = update.effective_user.id
+        if user_id not in teleg_cmd.userStatus:
+            teleg_cmd.sendMessages(chat_id, "You shouldn't reply other's query", reply_to_message_id=chat_id)
+            return
         if not self.__isChatRegistered(chat_id):
             return
         if teleg_cmd.userStatus[user_id] == teleg_cmd.StatusAddToWatchList:
@@ -179,14 +227,50 @@ class Stock_bot:
             return False
         return True
 
-    def __prepareWatcher(self, market_open, market_close):
+    def __updatePrice(self, chat_id, sym, price):
+        if sym in teleg_cmd.gSym[chat_id]:
+            teleg_cmd.gSym[chat_id][sym]["currentPrice"] = price
+
+    def __prepareWatcher(self, current_dt, market_open, market_close):
         sym2ChatId = {}
         for id in teleg_cmd.gSym:
             for sym in teleg_cmd.gSym[id]:
-                if len(sym2ChatId[sym]) == 0:
+                if sym not in sym2ChatId:
                     sym2ChatId[sym] = []
                 if id not in sym2ChatId[sym]:
                     sym2ChatId[sym].append(id)
-        th = threading.Thread(target=self.watchPriceTrend(), args=(market_open, market_close, sym2ChatId))
+        th = threading.Thread(target=self.watchPriceTrend, args=(current_dt, market_open, market_close, sym2ChatId))
         th.start()
 
+    def __dailyTimer(self):
+        nyc = timezone('America/New_York')
+        while True:
+            today = datetime.today().astimezone(nyc)
+            today = today.replace(
+                hour=0,
+                minute=0,
+                second=0
+            )
+            print(today, self.today)
+            after = today - self.today
+            print(after)
+            if after.days > 0:
+                self.today = today
+                today_str = datetime.today().astimezone(nyc).strftime('%Y-%m-%d')
+                calendar = alpaca.getMarketCalendar(today_str)
+                market_open = today.replace(
+                    hour=calendar.open.hour,
+                    minute=calendar.open.minute,
+                    second=0
+                )
+                market_open = market_open.astimezone(nyc)
+                market_close = today.replace(
+                    hour=calendar.close.hour,
+                    minute=calendar.close.minute,
+                    second=0
+                )
+                market_close = market_close.astimezone(nyc)
+
+                current_dt = datetime.today().astimezone(nyc)
+                self.__prepareWatcher(current_dt, market_open, market_close)
+            time.sleep(60*60*4)

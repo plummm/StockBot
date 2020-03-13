@@ -33,8 +33,8 @@ def AddCallbackQueryHandler(func):
     handler = CallbackQueryHandler(func)
     dispatcher.add_handler(handler)
 
-def sendMessages(chat_id, message):
-    updater.bot.send_message(chat_id=chat_id, text=message)
+def sendMessages(chat_id, message, reply_to_message_id=None):
+    updater.bot.send_message(chat_id=chat_id, text=message, reply_to_message_id=reply_to_message_id)
 
 def CommandAdd2WatchList(update, context):
     sendMessages(update.effective_chat.id, "tell me the stock's symbol")
@@ -55,9 +55,7 @@ def CommandShowWatchlist(update, context):
     chat_id = update.effective_chat.id
     num = len(gSym[chat_id])
     message = str(num) + " stocks in total:\n"
-    for each in gSym[chat_id]:
-        message += gSym[chat_id][each]["name"] + "(" + each + ") : $"+str(gSym[chat_id][each]["currentPrice"]) + "\n"
-    sendMessages(update.effective_chat.id, message)
+    mergeStocksPrint(chat_id, message)
 
 def InlineSearchForStock(update, context):
     query = update.inline_query.query
@@ -86,3 +84,8 @@ def invokeKeyboard(update):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     update.message.reply_text('Choose a stock:', reply_markup=reply_markup)
+
+def mergeStocksPrint(chat_id, message):
+    for each in gSym[chat_id]:
+        message += gSym[chat_id][each]["name"] + "(" + each + ") : $"+str(gSym[chat_id][each]["currentPrice"]) + "\n"
+    sendMessages(chat_id, message)

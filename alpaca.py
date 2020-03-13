@@ -27,13 +27,19 @@ def getGainAndLoss():
 
 def getHistoricalPrice(sym, time, limit):
     barset = api.get_barset(sym, time, limit=limit)
-    aapl_bars = barset[sym]
+    bars = barset[sym]
+    return bars
 
-    # See how much AAPL moved in that timeframe.
-    week_open = aapl_bars[0].o
-    week_close = aapl_bars[-1].c
-    percent_change = (week_close - week_open) / week_open * 100
-    print('{} moved {}% over the last 5 days'.format(sym, percent_change))
+def getCurrentPrice(sym):
+    bars = getHistoricalPrice(sym, 'day', 1)
+    day_close = bars[0].c
+    return day_close
+
+def getMarketOpenPrice(sym):
+    bars = getHistoricalPrice(sym, 'day', 1)
+    openPrice = bars[0].o
+    return openPrice
+
 
 def getListOfAssets():
     active_assets = api.list_assets(status='active')
@@ -59,3 +65,17 @@ def getMarketCalendar(date):
     # Check when the market was open on Dec. 1, 2018
     calendar = api.get_calendar(start=date, end=date)[0]
     return calendar
+
+def getPercentChange(sym, time, limit):
+    bars = getHistoricalPrice(sym, time, limit)
+    print(bars)
+    open = bars[0].o
+    close = bars[-1].c
+    percent_change = (close - open) / open * 100
+    return [percent_change, close]
+
+def getWeeklyChange(sym):
+    return getPercentChange(sym, 'day', 5)
+
+def getDailyChange(sym):
+    return getPercentChange(sym, 'day', 1)
