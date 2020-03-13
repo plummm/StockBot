@@ -14,12 +14,13 @@ import time
 import threading
 
 class Stock_bot:
-    def __init__(self, token):
+    def __init__(self, token, alpaca_api_key, alpaca_secrete_key):
         self.symCachePath = {}
         self.dailyReport = {}
         self.today = datetime.today()
         self.chatIdCachePath = "./chat_id"
         self.initTelegram(token)
+        self.initAlpaca(alpaca_api_key, alpaca_secrete_key)
         self.initLogging()
         self.initCache()
         self.initTime()
@@ -41,6 +42,8 @@ class Stock_bot:
                                     self.CommandEnableNotification)
         teleg_cmd.AddCommandHandler("disable_nofitication_",
                                     self.CommandDisableNotification)
+    def initAlpaca(self, alpaca_api_key, alpaca_secrete_key):
+        alpaca.setAlpacaApi(alpaca_api_key, alpaca_secrete_key)
 
     def initCache(self):
         ids = self.__getLocalChatId()
@@ -251,9 +254,7 @@ class Stock_bot:
                 minute=0,
                 second=0
             )
-            print(today, self.today)
             after = today - self.today
-            print(after)
             if after.days > 0:
                 self.today = today
                 today_str = datetime.today().astimezone(nyc).strftime('%Y-%m-%d')

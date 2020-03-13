@@ -1,8 +1,10 @@
 import alpaca_trade_api as tradeapi
 
-api = tradeapi.REST(
-        'PK7UFDY1AW3S7YPWSJMO',
-        'ITFjOhzWquWT5dOka5igVfHfIkwfuhELKXKluzHx',
+def setAlpacaApi(api_key, secret_key):
+    global api
+    api = tradeapi.REST(
+        api_key,
+        secret_key,
         'https://paper-api.alpaca.markets'
     )
 
