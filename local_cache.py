@@ -27,7 +27,8 @@ def readFromChatIdCache(path):
         text = f.readlines()
         for line in text:
             line = line.strip('\n')
-            chat_id.append(int(line))
+            if int(line) not in chat_id:
+                chat_id.append(int(line))
         f.close()
     else:
         f = open(path, 'w')
