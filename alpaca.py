@@ -70,7 +70,6 @@ def getMarketCalendar(date):
 
 def getPercentChange(sym, time, limit):
     bars = getHistoricalPrice(sym, time, limit)
-    print(bars)
     open = bars[0].o
     close = bars[-1].c
     percent_change = (close - open) / open * 100

@@ -30,6 +30,7 @@ def getDetail(symbol):
                 "name":price["longName"],
                 "symbol":price["symbol"],
                 "currentPrice":nowPrice,
+                "DailyChange":0,
                 "isExist":isExist
             }
             return detail

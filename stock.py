@@ -112,50 +112,64 @@ class Stock_bot:
             for sym in sym2ChatId:
                 [change, price] = alpaca.getDailyChange(sym)
                 for chat_id in sym2ChatId[sym]:
+                    self.__updatePrice(chat_id, sym, price)
+                    self.__updateChange(chat_id, sym, change)
                     if abs(change) > 40 and (self.dailyReport[chat_id][sym] ^ (1 << posChange40Percent)):
-                        message = 'Breaking: {} moved {}% over the last one day, current price is ${}(草，不可能发生)'.format(sym, change, price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(草，不可能发生)'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange40Percent)
                     elif abs(change) > 35 and (self.dailyReport[chat_id][sym] ^ (1 << posChange35Percent)):
-                        message = 'Breaking: {} moved {}% over the last one day, current price is ${}(肯定是出bug了)'.format(sym, change, price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(肯定是bug)'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange35Percent)
                     elif abs(change) > 30 and (self.dailyReport[chat_id][sym] ^ (1 << posChange30Percent)):
-                        message = 'Breaking: {} moved {}% over the last one day, current price is ${}'.format(sym, change, price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange30Percent)
                     elif abs(change) > 25 and (self.dailyReport[chat_id][sym] ^ (1 << posChange25Percent)):
-                        message = 'Breaking: {} moved {}% over the last one day, current price is ${}'.format(sym, change, price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange25Percent)
                     elif abs(change) > 20 and (self.dailyReport[chat_id][sym] ^ (1 << posChange20Percent)):
-                        message = 'Breaking: {} moved {}% over the last one day, current price is ${}'.format(sym, change, price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange20Percent)
                     elif abs(change) > 15 and (self.dailyReport[chat_id][sym] ^ (1 << posChange15Percent)):
-                        message = 'Breaking: {} moved {}% over the last one day, current price is ${}'.format(sym, change, price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange15Percent)
                     elif abs(change) > 10 and (self.dailyReport[chat_id][sym] ^ (1 << posChange10Percent)):
-                        message = 'Breaking: {} moved {}% over the last one day, current price is ${}'.format(sym, change, price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange10Percent)
                     elif abs(change) > 5 and (self.dailyReport[chat_id][sym] ^ (1 << posChange5Percent)):
-                        message = 'Breaking: {} moved {}% over the last one day, current price is ${}'.format(sym, change, price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange5Percent)
             before_market_close = market_close - current_dt
 
         print("Market Closed")
         since_market_close = current_dt - market_close
-        if since_market_close.seconds // 60 <= 7:
+        if since_market_close.seconds // 60 <= 7*60:
             for sym in sym2ChatId:
-                price = alpaca.getCurrentPrice(sym)
+                [change, price] = alpaca.getDailyChange(sym)
                 for chat_id in sym2ChatId[sym]:
                     self.__updatePrice(chat_id, sym, price)
+                    self.__updateChange(chat_id, sym, change)
+
             for chat_id in teleg_cmd.gChatId:
+                message = "Market Closeed Price:\n"
                 teleg_cmd.sendMessages(chat_id, "Market Closed!")
-                teleg_cmd.mergeStocksPrint(chat_id, "Market Closeed Price:\n")
+                #teleg_cmd.mergeStocksPrint(chat_id, "Market Closeed Price:\n")
+                for each in teleg_cmd.gSym[chat_id]:
+                    message += teleg_cmd.gSym[chat_id][each]["name"] + "(" + each + ") : $" + str(
+                        teleg_cmd.gSym[chat_id][each]["currentPrice"]) + "  |  " + str(round(
+                        teleg_cmd.gSym[chat_id][each]["DailyChange"], 3))
+                    if teleg_cmd.gSym[chat_id][each]["DailyChange"] >= 0:
+                        message += "% Up\n"
+                    else:
+                        message += "% Down\n"
+                teleg_cmd.sendMessages(chat_id, message)
 
 
 
@@ -273,6 +287,10 @@ class Stock_bot:
     def __updatePrice(self, chat_id, sym, price):
         if sym in teleg_cmd.gSym[chat_id]:
             teleg_cmd.gSym[chat_id][sym]["currentPrice"] = price
+
+    def __updateChange(self, chat_id, sym, change):
+        if sym in teleg_cmd.gSym[chat_id]:
+            teleg_cmd.gSym[chat_id][sym]["DailyChange"] = change
 
     def __prepareWatcher(self, current_dt, market_open, market_close):
         sym2ChatId = {}
