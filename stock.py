@@ -82,17 +82,18 @@ class Stock_bot:
         th = threading.Thread(target=self.__dailyTimer)
         th.start()
 
-    def watchPriceTrend(self, current_dt, market_open, market_close, sym2ChatId):
-        before_market_open = market_open - current_dt
-        since_market_open = current_dt - market_open
+    def watchPriceTrend(self, market_open, market_close, sym2ChatId):
+        nyc = timezone('America/New_York')
+        before_market_open = market_open - datetime.today().astimezone(nyc)
+        since_market_open = datetime.today().astimezone(nyc) - market_open
         self.logger.info("Serval hours before market open.")
         while before_market_open.days >= 0 and before_market_open.seconds // 60 >= 60:
             time.sleep(60*60)
-            before_market_open = market_open - current_dt
+            before_market_open = market_open - datetime.today().astimezone(nyc)
         self.logger.info("Serval minutes before market open.")
         while before_market_open.days >= 0 and before_market_open.seconds // 60 <= 60:
             time.sleep(1)
-            before_market_open = market_open - current_dt
+            before_market_open = market_open - datetime.today().astimezone(nyc)
         self.logger.info("Market Opened")
         if since_market_open.seconds // 60 <= 7:
             for sym in sym2ChatId:
@@ -103,7 +104,7 @@ class Stock_bot:
                 teleg_cmd.sendMessages(chat_id, "Market Opened!")
                 teleg_cmd.mergeStocksPrint(chat_id, "Market Opened Price:\n")
 
-        before_market_close = market_close - current_dt
+        before_market_close = market_close - datetime.today().astimezone(nyc)
         while before_market_close.days >=0:
             time.sleep(300)
             for sym in sym2ChatId:
@@ -116,11 +117,11 @@ class Stock_bot:
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange40Percent)
                     elif abs(change) >= 35 and abs(change) < 40 and (self.dailyReport[chat_id][sym] ^ (1 << posChange35Percent)) > self.dailyReport[chat_id][sym]:
-                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(请麻烦叫醒ET)'.format(sym, round(change,3), price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(炒你妈的股)'.format(sym, round(change,3), price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange35Percent)
                     elif abs(change) >= 30 and abs(change) < 35 and (self.dailyReport[chat_id][sym] ^ (1 << posChange30Percent)) > self.dailyReport[chat_id][sym]:
-                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(草，不可能发生)'.format(sym, round(change,3), price)
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(草)'.format(sym, round(change,3), price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange30Percent)
                     elif abs(change) >= 25 and abs(change) < 30 and (self.dailyReport[chat_id][sym] ^ (1 << posChange25Percent)) > self.dailyReport[chat_id][sym]:
@@ -143,10 +144,10 @@ class Stock_bot:
                         message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, round(change,3), price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange5Percent)
-            before_market_close = market_close - current_dt
+            before_market_close = market_close - datetime.today().astimezone(nyc)
 
         self.logger.info("Market Closed")
-        since_market_close = current_dt - market_close
+        since_market_close = datetime.today().astimezone(nyc) - market_close
         if since_market_close.seconds // 60 <= 7:
             for sym in sym2ChatId:
                 [change, price] = alpaca.getDailyChange(sym)
@@ -289,7 +290,7 @@ class Stock_bot:
         if sym in teleg_cmd.gSym[chat_id]:
             teleg_cmd.gSym[chat_id][sym]["DailyChange"] = change
 
-    def __prepareWatcher(self, current_dt, market_open, market_close):
+    def __prepareWatcher(self, market_open, market_close):
         sym2ChatId = {}
         for id in teleg_cmd.gSym:
             for sym in teleg_cmd.gSym[id]:
@@ -297,7 +298,7 @@ class Stock_bot:
                     sym2ChatId[sym] = []
                 if id not in sym2ChatId[sym]:
                     sym2ChatId[sym].append(id)
-        th = threading.Thread(target=self.watchPriceTrend, args=(current_dt, market_open, market_close, sym2ChatId))
+        th = threading.Thread(target=self.watchPriceTrend, args=(market_open, market_close, sym2ChatId))
         th.start()
 
     def __dailyTimer(self):
@@ -333,6 +334,5 @@ class Stock_bot:
                 )
                 market_close = market_close.astimezone(nyc)
 
-                current_dt = datetime.today().astimezone(nyc)
-                self.__prepareWatcher(current_dt, market_open, market_close)
+                self.__prepareWatcher(market_open, market_close)
             time.sleep(60*60*4)
