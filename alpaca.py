@@ -62,7 +62,6 @@ def place_new_market_order(sym, qty, side):
 
 def getMarketCalendar(date):
     clock = api.get_clock()
-    print('The market is {}'.format('open.' if clock.is_open else 'closed.'))
 
     # Check when the market was open on Dec. 1, 2018
     calendar = api.get_calendar(start=date, end=date)[0]

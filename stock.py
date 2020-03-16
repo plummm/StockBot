@@ -29,7 +29,6 @@ class Stock_bot:
     def __init__(self, token, alpaca_api_key, alpaca_secrete_key):
         self.symCachePath = {}
         self.dailyReport = {}
-        self.today = datetime.today()
         self.chatIdCachePath = "./chat_id"
         self.initTelegram(token)
         self.initAlpaca(alpaca_api_key, alpaca_secrete_key)
@@ -72,31 +71,29 @@ class Stock_bot:
     def initLogging(self):
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                             level=logging.INFO)
+        self.logger = logging.getLogger("BotLogger")
+        hdlr = logging.FileHandler("./log")
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        hdlr.setFormatter(formatter)
+        self.logger.addHandler(hdlr)
+        self.logger.setLevel(logging.INFO)
 
     def initTime(self):
-        nyc = timezone('America/New_York')
-        self.today = datetime.today().astimezone(nyc)
-        self.today -= timedelta(days=1)
-        self.today = self.today.replace(
-            hour=0,
-            minute=0,
-            second=0
-        )
         th = threading.Thread(target=self.__dailyTimer)
         th.start()
 
     def watchPriceTrend(self, current_dt, market_open, market_close, sym2ChatId):
         before_market_open = market_open - current_dt
         since_market_open = current_dt - market_open
-        print("Serval hours before market open.")
+        self.logger.info("Serval hours before market open.")
         while before_market_open.days >= 0 and before_market_open.seconds // 60 >= 60:
             time.sleep(60*60)
             before_market_open = market_open - current_dt
-        print("Serval minutes before market open.")
+        self.logger.info("Serval minutes before market open.")
         while before_market_open.days >= 0 and before_market_open.seconds // 60 <= 60:
             time.sleep(1)
             before_market_open = market_open - current_dt
-        print("Market Opened")
+        self.logger.info("Market Opened")
         if since_market_open.seconds // 60 <= 7:
             for sym in sym2ChatId:
                 price = alpaca.getMarketOpenPrice(sym)
@@ -148,7 +145,7 @@ class Stock_bot:
                         self.dailyReport[chat_id][sym] ^= (1 << posChange5Percent)
             before_market_close = market_close - current_dt
 
-        print("Market Closed")
+        self.logger.info("Market Closed")
         since_market_close = current_dt - market_close
         if since_market_close.seconds // 60 <= 7:
             for sym in sym2ChatId:
@@ -262,7 +259,7 @@ class Stock_bot:
         return req_cmd.getValidation(detail)
 
     def __getPrice(self, sym):
-        return req_cmd.getPrice(sym)
+        return alpaca.getCurrentPrice(sym)
 
     def __getLocalSym(self, chat_id):
         sym = local_cache.readFromSymsCache(self.symCachePath[chat_id])
@@ -307,16 +304,22 @@ class Stock_bot:
         nyc = timezone('America/New_York')
         while True:
             today = datetime.today().astimezone(nyc)
+            today_str = datetime.today().astimezone(nyc).strftime('%Y-%m-%d')
+            calendar = alpaca.getMarketCalendar(today_str)
+            market_open = today.replace(
+                day=calendar.date.day,
+                hour=0,
+                minute=0,
+                second=0
+            )
             today = today.replace(
                 hour=0,
                 minute=0,
                 second=0
             )
-            after = today - self.today
-            if after.days > 0:
-                self.today = today
-                today_str = datetime.today().astimezone(nyc).strftime('%Y-%m-%d')
-                calendar = alpaca.getMarketCalendar(today_str)
+            after = today - market_open
+            if after.days == 0:
+                self.logger.info("Happy tomorrow")
                 market_open = today.replace(
                     hour=calendar.open.hour,
                     minute=calendar.open.minute,

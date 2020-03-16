@@ -19,12 +19,12 @@ def getDetail(symbol):
             res_json = json.loads(response.text)
             price = res_json["price"]
 
-            if "financialData" not in res_json:
+            if "price" not in res_json:
                 isExist = False
                 nowPrice = -1
             else:
                 isExist = True
-                nowPrice = res_json["financialData"]["currentPrice"]["raw"]
+                nowPrice = res_json["summaryDetail"]["ask"]["raw"]
 
             detail = {
                 "name":price["longName"],
