@@ -111,35 +111,35 @@ class Stock_bot:
                 for chat_id in sym2ChatId[sym]:
                     self.__updatePrice(chat_id, sym, price)
                     self.__updateChange(chat_id, sym, change)
-                    if abs(change) > 40 and (self.dailyReport[chat_id][sym] ^ (1 << posChange40Percent)):
-                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(草，不可能发生)'.format(sym, change, price)
+                    if abs(change) >= 40 and abs(change) < 45 and (self.dailyReport[chat_id][sym] ^ (1 << posChange40Percent)) > self.dailyReport[chat_id][sym]:
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(喊他起床！快！现在！立刻！马上！)'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange40Percent)
-                    elif abs(change) > 35 and (self.dailyReport[chat_id][sym] ^ (1 << posChange35Percent)):
-                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(肯定是bug)'.format(sym, change, price)
+                    elif abs(change) >= 35 and abs(change) < 40 and (self.dailyReport[chat_id][sym] ^ (1 << posChange35Percent)) > self.dailyReport[chat_id][sym]:
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(请麻烦叫醒ET)'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange35Percent)
-                    elif abs(change) > 30 and (self.dailyReport[chat_id][sym] ^ (1 << posChange30Percent)):
-                        message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
+                    elif abs(change) >= 30 and abs(change) < 35 and (self.dailyReport[chat_id][sym] ^ (1 << posChange30Percent)) > self.dailyReport[chat_id][sym]:
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(草，不可能发生)'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange30Percent)
-                    elif abs(change) > 25 and (self.dailyReport[chat_id][sym] ^ (1 << posChange25Percent)):
-                        message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
+                    elif abs(change) >= 25 and abs(change) < 30 and (self.dailyReport[chat_id][sym] ^ (1 << posChange25Percent)) > self.dailyReport[chat_id][sym]:
+                        message = 'Breaking: {} moved {}% over the last day, current price is ${}(肯定是bug)'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange25Percent)
-                    elif abs(change) > 20 and (self.dailyReport[chat_id][sym] ^ (1 << posChange20Percent)):
+                    elif abs(change) >= 20 and abs(change) < 25 and (self.dailyReport[chat_id][sym] ^ (1 << posChange20Percent)) > self.dailyReport[chat_id][sym]:
                         message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange20Percent)
-                    elif abs(change) > 15 and (self.dailyReport[chat_id][sym] ^ (1 << posChange15Percent)):
+                    elif abs(change) >= 15 and abs(change) < 20 and (self.dailyReport[chat_id][sym] ^ (1 << posChange15Percent)) > self.dailyReport[chat_id][sym]:
                         message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange15Percent)
-                    elif abs(change) > 10 and (self.dailyReport[chat_id][sym] ^ (1 << posChange10Percent)):
+                    elif abs(change) >= 10 and abs(change) < 15 and (self.dailyReport[chat_id][sym] ^ (1 << posChange10Percent)) > self.dailyReport[chat_id][sym]:
                         message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange10Percent)
-                    elif abs(change) > 5 and (self.dailyReport[chat_id][sym] ^ (1 << posChange5Percent)):
+                    elif abs(change) >= 5 and abs(change) < 10 and (self.dailyReport[chat_id][sym] ^ (1 << posChange5Percent)) > self.dailyReport[chat_id][sym]:
                         message = 'Breaking: {} moved {}% over the last day, current price is ${}'.format(sym, change, price)
                         teleg_cmd.sendMessages(chat_id, message)
                         self.dailyReport[chat_id][sym] ^= (1 << posChange5Percent)
