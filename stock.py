@@ -7,7 +7,7 @@ from telegram import Bot
 from telegram.ext import Updater
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 from datetime import datetime, timedelta
-from pytz import timezone
+from pytz import timezone, utc
 
 import logging
 import time
@@ -71,6 +71,7 @@ class Stock_bot:
     def initLogging(self):
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                             level=logging.INFO)
+        logging.Formatter.converter = self.__customTime
         self.logger = logging.getLogger("BotLogger")
         hdlr = logging.FileHandler("./log")
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -85,16 +86,20 @@ class Stock_bot:
     def watchPriceTrend(self, market_open, market_close, sym2ChatId):
         nyc = timezone('America/New_York')
         before_market_open = market_open - datetime.today().astimezone(nyc)
-        since_market_open = datetime.today().astimezone(nyc) - market_open
         self.logger.info("Serval hours before market open.")
+        self.logger.info(before_market_open)
         while before_market_open.days >= 0 and before_market_open.seconds // 60 >= 60:
             time.sleep(60*60)
             before_market_open = market_open - datetime.today().astimezone(nyc)
         self.logger.info("Serval minutes before market open.")
+        self.logger.info(before_market_open)
         while before_market_open.days >= 0 and before_market_open.seconds // 60 <= 60:
             time.sleep(1)
             before_market_open = market_open - datetime.today().astimezone(nyc)
+
+        since_market_open = datetime.today().astimezone(nyc) - market_open
         self.logger.info("Market Opened")
+        self.logger.info(since_market_open)
         if since_market_open.seconds // 60 <= 7:
             for sym in sym2ChatId:
                 price = alpaca.getMarketOpenPrice(sym)
@@ -146,8 +151,9 @@ class Stock_bot:
                         self.dailyReport[chat_id][sym] ^= (1 << posChange5Percent)
             before_market_close = market_close - datetime.today().astimezone(nyc)
 
-        self.logger.info("Market Closed")
         since_market_close = datetime.today().astimezone(nyc) - market_close
+        self.logger.info("Market Closed")
+        self.logger.info(since_market_close)
         if since_market_close.seconds // 60 <= 7:
             for sym in sym2ChatId:
                 [change, price] = alpaca.getDailyChange(sym)
@@ -290,6 +296,12 @@ class Stock_bot:
         if sym in teleg_cmd.gSym[chat_id]:
             teleg_cmd.gSym[chat_id][sym]["DailyChange"] = change
 
+    def __customTime(*args):
+        utc_dt = utc.localize(datetime.utcnow())
+        my_tz = timezone("America/New_York")
+        converted = utc_dt.astimezone(my_tz)
+        return converted.timetuple()
+
     def __prepareWatcher(self, market_open, market_close):
         sym2ChatId = {}
         for id in teleg_cmd.gSym:
@@ -321,6 +333,7 @@ class Stock_bot:
             after = today - market_open
             if after.days == 0:
                 self.logger.info("Happy tomorrow")
+                self.logger.info(after)
                 market_open = today.replace(
                     hour=calendar.open.hour,
                     minute=calendar.open.minute,
@@ -335,4 +348,7 @@ class Stock_bot:
                 market_close = market_close.astimezone(nyc)
 
                 self.__prepareWatcher(market_open, market_close)
-            time.sleep(60*60*4)
+            tomorrow = datetime.now() - timedelta(days=1)
+            tomorrow = today.replace(hour=7, minute=0, second=0)
+            delta = tomorrow - datetime.now()
+            time.sleep(delta.seconds)
