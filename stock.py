@@ -311,7 +311,7 @@ class Stock_bot:
                 if id not in sym2ChatId[sym]:
                     sym2ChatId[sym].append(id)
         th = threading.Thread(target=self.watchPriceTrend, args=(market_open, market_close, sym2ChatId))
-        th.start()
+        th.run()
 
     def __dailyTimer(self):
         nyc = timezone('America/New_York')
@@ -348,7 +348,9 @@ class Stock_bot:
                 market_close = market_close.astimezone(nyc)
 
                 self.__prepareWatcher(market_open, market_close)
-            tomorrow = datetime.now() - timedelta(days=1)
+            tomorrow = datetime.now().astimezone(nyc) + timedelta(days=1)
             tomorrow = today.replace(hour=7, minute=0, second=0)
-            delta = tomorrow - datetime.now()
+            delta = tomorrow - datetime.now().astimezone(nyc)
+            self.logger.info("Going to sleep to tomorrow")
+            self.logger.info(delta)
             time.sleep(delta.seconds)
