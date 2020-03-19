@@ -34,11 +34,15 @@ def getHistoricalPrice(sym, time, limit):
 
 def getCurrentPrice(sym):
     bars = getHistoricalPrice(sym, 'day', 1)
+    if len(bars) == 0:
+        return -1
     day_close = bars[0].c
     return day_close
 
 def getMarketOpenPrice(sym):
     bars = getHistoricalPrice(sym, 'day', 1)
+    if len(bars) == 0:
+        return -1
     openPrice = bars[0].o
     return openPrice
 
@@ -69,6 +73,8 @@ def getMarketCalendar(date):
 
 def getPercentChange(sym, time, limit):
     bars = getHistoricalPrice(sym, time, limit)
+    if len(bars) == 0:
+        return [0, -1]
     open = bars[0].o
     close = bars[-1].c
     percent_change = (close - open) / open * 100

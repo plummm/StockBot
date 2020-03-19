@@ -33,7 +33,7 @@ class Stock_bot:
         self.initTelegram(token)
         self.initAlpaca(alpaca_api_key, alpaca_secrete_key)
         self.initLogging()
-        self.initCache()
+        #self.initCache()
         self.initTime()
 
     def initTelegram(self, token):
@@ -186,8 +186,8 @@ class Stock_bot:
     def Add2WatchList(self, chat_id, sym):
         print(teleg_cmd.gSym)
         if sym not in teleg_cmd.gSym[chat_id]:
-            if sym not in self.dailyReport:
-                self.dailyReport[sym] = {}
+            if sym not in self.dailyReport[chat_id]:
+                self.dailyReport[chat_id][sym] = 0
             detail = req_cmd.getDetail(sym)
             if self.__validSym(detail):
                 teleg_cmd.gSym[chat_id][sym] = detail
@@ -334,6 +334,7 @@ class Stock_bot:
             if after.days == 0:
                 self.logger.info("Happy tomorrow")
                 self.logger.info(after)
+                self.initCache()
                 market_open = today.replace(
                     hour=calendar.open.hour,
                     minute=calendar.open.minute,
