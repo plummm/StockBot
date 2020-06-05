@@ -180,7 +180,12 @@ class Stock_bot:
     def showThePrice(self, update, sym):
         price = self.__getPrice(sym)
         if price != -1:
-            teleg_cmd.sendMessages(update.effective_chat.id, "Current price of " + sym + " is $" + str(price))
+            if sym in teleg_cmd.gSym[update.effective_chat.id]:
+                last_price = teleg_cmd.gSym[update.effective_chat.id][sym]["currentPrice"]
+                percentage = (price - last_price) / last_price * 100
+                teleg_cmd.sendMessages(update.effective_chat.id, "Current price of {} is ${}, moving {}%".format(sym, str(price), round(percentage,3)))
+            else:
+                teleg_cmd.sendMessages(update.effective_chat.id, "Current price of {} is ${}".format(sym, str(price)))
             self.__updatePrice(update.effective_chat.id, sym, price)
 
     def Add2WatchList(self, chat_id, sym):
@@ -229,7 +234,7 @@ class Stock_bot:
                 teleg_cmd.sendMessages(chat_id, update.message.text + " has been added to the watchlist.\n"
                                        + "The current price is $" + str(teleg_cmd.gSym[chat_id][update.message.text]["currentPrice"]))
             else:
-                teleg_cmd.sendMessages(chat_id, update.message.text + " is not a valid stock symbol.")
+                teleg_cmd.sendMessages(chat_id, update.message.text + " is in the watchlist or it's not a valid stock symbol.")
         elif teleg_cmd.userStatus[user_id] == teleg_cmd.StatusRemoveFromWatchList:
             if self.RemoveFromWatchList(chat_id, update.message.text):
                 teleg_cmd.sendMessages(chat_id, update.message.text + " has been removed from the watchlist.")

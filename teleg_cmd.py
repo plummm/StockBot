@@ -75,15 +75,18 @@ def InlineSearchForStock(update, context):
 def invokeKeyboard(update):
     keyboard = []
     row = []
-    for each in gSym[update.effective_chat.id]:
-        row.append(InlineKeyboardButton(each, callback_data=each))
-        if len(row) == 6:
-            keyboard.append(row)
-            row = []
-    keyboard.append(row)
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    if update.effective_chat.id in gSym:
+        for each in gSym[update.effective_chat.id]:
+            row.append(InlineKeyboardButton(each, callback_data=each))
+            if len(row) == 6:
+                keyboard.append(row)
+                row = []
+        keyboard.append(row)
+        reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text('Choose a stock:', reply_markup=reply_markup)
+        update.message.reply_text('Choose a stock:', reply_markup=reply_markup)
+    else:
+        update.message.reply_text('Nothing in watchlist', reply_markup=reply_markup)
 
 def mergeStocksPrint(chat_id, message):
     for each in gSym[chat_id]:

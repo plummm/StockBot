@@ -28,9 +28,13 @@ def getGainAndLoss():
     print(f'Today\'s portfolio balance change: ${balance_change}')
 
 def getHistoricalPrice(sym, time, limit):
-    barset = api.get_barset(sym, time, limit=limit)
-    bars = barset[sym]
-    return bars
+    try:
+        barset = api.get_barset(sym, time, limit=limit)
+        bars = barset[sym]
+        return bars
+    except:
+        print("getHistoricalPrice error")
+        return []
 
 def getCurrentPrice(sym):
     bars = getHistoricalPrice(sym, 'day', 1)
