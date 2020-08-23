@@ -1,5 +1,7 @@
 # StockBot
-Stock bot on Telegram
+An open source Stock-Bot deployed on Telegram
+
+find me here: @ETStockBot
 
 Usage: 
 
