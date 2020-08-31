@@ -178,15 +178,12 @@ class Stock_bot:
 
 
     def showThePrice(self, update, sym):
-        price = self.__getPrice(sym)
-        if price != -1:
-            if sym in teleg_cmd.gSym[update.effective_chat.id]:
-                last_price = teleg_cmd.gSym[update.effective_chat.id][sym]["currentPrice"]
-                percentage = (price - last_price) / last_price * 100
-                teleg_cmd.sendMessages(update.effective_chat.id, "Current price of {} is ${}, moving {}%".format(sym, str(price), round(percentage,3)))
-            else:
-                teleg_cmd.sendMessages(update.effective_chat.id, "Current price of {} is ${}".format(sym, str(price)))
-            self.__updatePrice(update.effective_chat.id, sym, price)
+        if sym in teleg_cmd.gSym[update.effective_chat.id]:
+            [percentage, price] = alpaca.getDailyChange(sym)
+            teleg_cmd.sendMessages(update.effective_chat.id, "Current price of {} is ${}, moving {}%".format(sym, str(price), round(percentage,3)))
+        else:
+            teleg_cmd.sendMessages(update.effective_chat.id, "Current price of {} is ${}".format(sym, str(price)))
+        self.__updatePrice(update.effective_chat.id, sym, price)
 
     def Add2WatchList(self, chat_id, sym):
         print(teleg_cmd.gSym)
