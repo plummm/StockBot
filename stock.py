@@ -182,6 +182,7 @@ class Stock_bot:
             [percentage, price] = alpaca.getDailyChange(sym)
             teleg_cmd.sendMessages(update.effective_chat.id, "Current price of {} is ${}, moving {}%".format(sym, str(price), round(percentage,3)))
         else:
+            [percentage, price] = alpaca.getDailyChange(sym)
             teleg_cmd.sendMessages(update.effective_chat.id, "Current price of {} is ${}".format(sym, str(price)))
         self.__updatePrice(update.effective_chat.id, sym, price)
 

@@ -79,10 +79,10 @@ def getPercentChange(sym, time, limit):
     bars = getHistoricalPrice(sym, time, limit)
     if len(bars) == 0:
         return [0, -1]
-    open = bars[0].o
-    close = bars[-1].c
-    percent_change = (close - open) / open * 100
-    return [percent_change, close]
+    open_price = bars[0].o
+    close_price = bars[-1].c
+    percent_change = (close_price - open_price) / open_price * 100
+    return [percent_change, close_price]
 
 def getWeeklyChange(sym):
     return getPercentChange(sym, 'day', 5)

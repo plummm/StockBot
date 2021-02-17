@@ -4,7 +4,7 @@ from telegram.ext import Filters
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from telegram import Bot
+from telegram import Bot, error
 
 StatusNone = 0
 StatusAddToWatchList = 1
@@ -34,7 +34,11 @@ def AddCallbackQueryHandler(func):
     dispatcher.add_handler(handler)
 
 def sendMessages(chat_id, message, reply_to_message_id=None):
-    updater.bot.send_message(chat_id=chat_id, text=message, reply_to_message_id=reply_to_message_id)
+    try:
+        updater.bot.send_message(chat_id=chat_id, text=message, reply_to_message_id=reply_to_message_id)
+    except:
+        print("exception occurs at chat {}".format(chat_id))
+
 
 def CommandAdd2WatchList(update, context):
     sendMessages(update.effective_chat.id, "tell me the stock's symbol")
