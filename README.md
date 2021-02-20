@@ -1,7 +1,7 @@
 # StockBot
 An open source Stock-Bot deployed on Telegram
 
-find me here: @ETStockBot
+find me here: [@ETStockBot](http://t.me/ETStockBot)
 
 Usage: 
 
