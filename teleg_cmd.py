@@ -11,6 +11,11 @@ StatusAddToWatchList = 1
 StatusRemoveFromWatchList = 2
 StatusGetPrice = 3
 
+ActionPrint = 0
+ActionAddToWatchList = 1
+
+STOCK = 0
+VIRTUAL_CURRENCY = 1
 updater = None
 dispatcher = None
 userStatus = {}
@@ -81,7 +86,8 @@ def invokeKeyboard(update):
     row = []
     if update.effective_chat.id in gSym:
         for each in gSym[update.effective_chat.id]:
-            row.append(InlineKeyboardButton(each, callback_data=each))
+            sym_type = gSym[update.effective_chat.id][each]["type"]
+            row.append(InlineKeyboardButton(each, callback_data="{} {} {}".format(sym_type, each, ActionPrint)))
             if len(row) == 6:
                 keyboard.append(row)
                 row = []
@@ -91,6 +97,19 @@ def invokeKeyboard(update):
         update.message.reply_text('Choose a stock:', reply_markup=reply_markup)
     else:
         update.message.reply_text('Nothing in watchlist', reply_markup=reply_markup)
+
+def chooseConflictSym(update, sym, action):
+        keyboard = []
+        row = []
+        if update.effective_chat.id in gSym:
+            row.append(InlineKeyboardButton("{} the Stock".format(sym), callback_data="{} {}_Stock {}".format(STOCK, sym, action)))
+            row.append(InlineKeyboardButton("{} the Virtual Currency".format(sym), callback_data="{} {}_Virtual {}".format(VIRTUAL_CURRENCY, sym, action)))
+            keyboard.append(row)
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            update.message.reply_text('There are two kinds of {}:'.format(sym), reply_markup=reply_markup)
+        else:
+            update.message.reply_text('No such symbol', reply_markup=reply_markup)
 
 def mergeStocksPrint(chat_id, message):
     for each in gSym[chat_id]:

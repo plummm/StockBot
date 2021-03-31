@@ -1,9 +1,14 @@
+from teleg_cmd import ActionAddToWatchList, chooseConflictSym
 import requests
 import json
+import virtual_currency
 from datetime import datetime, timedelta
 from pytz import timezone
 
-def getDetail(symbol):
+STOCK = 0
+VIRTUAL_CURRENCY = 1
+
+def getDetail(symbol, update, type=-1):
     url = "https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-analysis"
     querystring = {"symbol": symbol}
     headers = {
@@ -18,10 +23,24 @@ def getDetail(symbol):
         if response.status_code == 200:
             res_json = json.loads(response.text)
             price = res_json["price"]
+            if type == -1 and validStockAndVirtual(symbol, price):
+                chooseConflictSym(update, symbol, ActionAddToWatchList)
+                return None
 
-            if "price" not in res_json:
+            if price["longName"] == None or type == VIRTUAL_CURRENCY:
+                [percentage, nowPrice] = virtual_currency.getDailyChange(symbol)
                 isExist = False
-                nowPrice = -1
+                if nowPrice != -1:
+                    isExist = True
+                    detail = {
+                        "name":symbol,
+                        "symbol":symbol,
+                        "currentPrice":nowPrice,
+                        "DailyChange":0,
+                        "isExist":isExist,
+                        "type": VIRTUAL_CURRENCY
+                    }
+                    return detail
             else:
                 isExist = True
                 nowPrice = res_json["summaryDetail"]["ask"]["raw"]
@@ -31,12 +50,16 @@ def getDetail(symbol):
                 "symbol":price["symbol"],
                 "currentPrice":nowPrice,
                 "DailyChange":0,
-                "isExist":isExist
+                "isExist":isExist,
+                "type": STOCK
             }
             return detail
 
     return {"isExist": False}
 
+def validStockAndVirtual(sym, price):
+    [percentage, nowPrice] = virtual_currency.getDailyChange(sym)
+    return nowPrice != -1 and price["longName"] != None
 
 def getPrice(symbol):
     res_json = {}
