@@ -37,7 +37,7 @@ class Stock_bot:
         self.initTelegram(token)
         self.initAlpaca(alpaca_api_key, alpaca_secrete_key, xcurrency_key)
         self.initLogging()
-        #self.initCache()
+        self.initCache()
         self.initTime()
 
     def initTelegram(self, token):
@@ -68,9 +68,9 @@ class Stock_bot:
                 teleg_cmd.gChatId.append(id)
             self.symCachePath[id] = "./sym-"+str(id)
             self.__getLocalSym(id)
+            if id not in self.dailyReport:
+                self.dailyReport[id] = {}
             for sym in teleg_cmd.gSym[id]:
-                if id not in self.dailyReport:
-                    self.dailyReport[id] = {}
                 self.dailyReport[id][sym] = 0
 
     def initLogging(self):
@@ -161,16 +161,27 @@ class Stock_bot:
 
     def print_price_change(self, sym2ChatId, type):
         for sym in sym2ChatId:
-            if type == Stock_bot.STCOK:
+            if teleg_cmd.gType[sym]["type"] != type:
+                continue
+            if teleg_cmd.gType[sym]["type"] ==  Stock_bot.STCOK:
                 [change, price] = alpaca.getDailyChange(sym)
             else:
-                [change, price] = virtual_currency.getDailyChange(sym)
-
+                [change, price] = virtual_currency.getDailyChange(teleg_cmd.gType[sym]["name"])
+            if price == -1:
+                continue
             for chat_id in sym2ChatId[sym]:
                 self.__updatePrice(chat_id, sym, price)
                 self.__updateChange(chat_id, sym, change)
+                if abs(change) >= 50 and (self.dailyReport[chat_id][sym] ^ (1 << posChange50Percent)) > self.dailyReport[chat_id][sym]:
+                    message = 'Breaking: #{} moved {}% over the last day, current price is ${}(？？？)'.format(sym, round(change,3), price)
+                    teleg_cmd.sendMessages(chat_id, message)
+                    self.dailyReport[chat_id][sym] ^= (1 << posChange50Percent)
+                if abs(change) >= 45 and abs(change) < 50 and (self.dailyReport[chat_id][sym] ^ (1 << posChange45Percent)) > self.dailyReport[chat_id][sym]:
+                    message = 'Breaking: #{} moved {}% over the last day, current price is ${}(？？)'.format(sym, round(change,3), price)
+                    teleg_cmd.sendMessages(chat_id, message)
+                    self.dailyReport[chat_id][sym] ^= (1 << posChange45Percent)
                 if abs(change) >= 40 and abs(change) < 45 and (self.dailyReport[chat_id][sym] ^ (1 << posChange40Percent)) > self.dailyReport[chat_id][sym]:
-                    message = 'Breaking: #{} moved {}% over the last day, current price is ${}(？？？？？？)'.format(sym, round(change,3), price)
+                    message = 'Breaking: #{} moved {}% over the last day, current price is ${}(？)'.format(sym, round(change,3), price)
                     teleg_cmd.sendMessages(chat_id, message)
                     self.dailyReport[chat_id][sym] ^= (1 << posChange40Percent)
                 elif abs(change) >= 35 and abs(change) < 40 and (self.dailyReport[chat_id][sym] ^ (1 << posChange35Percent)) > self.dailyReport[chat_id][sym]:
@@ -348,6 +359,8 @@ class Stock_bot:
                 if "type" not in teleg_cmd.gSym[chat_id][each_sym]:
                     teleg_cmd.gSym[chat_id][each_sym]["type"] = Stock_bot.STCOK
                     rewrite = 1
+                if each_sym not in teleg_cmd.gType:
+                    teleg_cmd.gType[each_sym] = teleg_cmd.gSym[chat_id][each_sym]
             if rewrite:
                 self.__write2LocalSym(chat_id, teleg_cmd.gSym)
         else:
@@ -412,7 +425,6 @@ class Stock_bot:
             if after.days == 0:
                 self.logger.info("Happy tomorrow")
                 self.logger.info(after)
-                self.initCache()
                 market_open = today.replace(
                     hour=calendar.open.hour,
                     minute=calendar.open.minute,

@@ -22,6 +22,8 @@ def getDetail(symbol, update, type=-1):
         response = requests.request("GET", url, headers=headers, params=querystring)
         if response.status_code == 200:
             res_json = json.loads(response.text)
+            if len(res_json) == 0:
+                return None
             price = res_json["price"]
             if type == -1 and validStockAndVirtual(symbol, price):
                 chooseConflictSym(update, symbol, ActionAddToWatchList)

@@ -20,6 +20,7 @@ updater = None
 dispatcher = None
 userStatus = {}
 gSym = {}
+gType = {}
 gChatId = []
 
 def AddCommandHandler(str, func):

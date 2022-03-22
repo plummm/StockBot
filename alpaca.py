@@ -1,11 +1,16 @@
 import alpaca_trade_api as tradeapi
+import pandas as pd
+
+from datetime import timedelta, datetime
+from alpaca_trade_api.rest import TimeFrame
 
 def setAlpacaApi(api_key, secret_key):
     global api
     api = tradeapi.REST(
-        api_key,
-        secret_key,
-        'https://paper-api.alpaca.markets'
+        key_id=api_key,
+        secret_key=secret_key,
+        base_url='https://paper-api.alpaca.markets',
+        api_version='v2'
     )
 
 def getAccountInfo():
@@ -29,22 +34,26 @@ def getGainAndLoss():
 
 def getHistoricalPrice(sym, time, limit):
     try:
-        barset = api.get_barset(sym, time, limit=limit)
-        bars = barset[sym]
+        start = pd.Timestamp('now').date()
+        end = pd.Timestamp('now').date()
+        bars = api.get_bars(sym, time,
+            limit=limit, adjustment='raw')
+        if len(bars) == 0:
+            bars = api.get_bars(sym, time, start=start, end=end,
+                limit=limit, adjustment='raw')
         return bars
-    except:
-        print("getHistoricalPrice error")
+    except Exception as e:
+        print("getHistoricalPrice error {}".format(e))
         return []
 
 def getCurrentPrice(sym):
-    bars = getHistoricalPrice(sym, 'day', 1)
+    bars = getHistoricalPrice(sym, TimeFrame.Minute, 1)
     if len(bars) == 0:
         return -1
-    day_close = bars[0].c
-    return day_close
+    return bars[-1].c
 
 def getMarketOpenPrice(sym):
-    bars = getHistoricalPrice(sym, 'day', 1)
+    bars = getHistoricalPrice(sym, TimeFrame.Day, 1)
     if len(bars) == 0:
         return -1
     openPrice = bars[0].o
@@ -85,7 +94,7 @@ def getPercentChange(sym, time, limit):
     return [percent_change, close_price]
 
 def getWeeklyChange(sym):
-    return getPercentChange(sym, 'day', 5)
+    return getPercentChange(sym, TimeFrame.Day, 5)
 
 def getDailyChange(sym):
-    return getPercentChange(sym, 'day', 1)
+    return getPercentChange(sym, TimeFrame.Hour, 24)
